@@ -1,0 +1,170 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>上传音乐后台</title>
+    <style>
+        body {
+            width: 100%;
+            background-image: url('../../Content/images/musicBg.jpg');
+            background-repeat:repeat-x;
+        }
+        header{
+            width:400px;           
+            margin:20px auto;
+            background-color:white;
+            opacity:0.8;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <input type="hidden" id="hidMusic" value=""/>
+        <table>
+            <tr>
+                <td>音乐名称:</td>
+                <td><input type="text" id="title" /></td>
+            </tr>
+            <tr>
+                <td>演唱者:</td>
+                <td><input type="text" id="author" /></td>
+            </tr>
+            <tr>                
+                <td>选择音乐:</td>
+                <td><input type="file" name="musicFile" id="musicFile" /><input value="上传" type="button" id="upMusic" /></td>
+            </tr>
+            <tr>
+                <td>选择封面:</td>
+                <td><input type="file" name="imgFile" id="imgFile" /><input type="button" value="上传" id="upPic" /></td>
+            </tr>
+            <tr>
+                <td colspan="2" style="text-align:center;"><img id="articleFacePhotoImg" style="width:60px;height:60px;"/></td>
+            </tr>
+            <tr>
+                <td colspan="2"><input type="button" id="save" value="保存" /></td>
+            </tr>
+        </table>
+    </header>
+    <script src="~/Scripts/jquery-1.8.2.min.js"></script>
+    <script src="~/Scripts/ajaxfileupload.js"></script>
+    <script src="~/Scripts/layer/layer.js"></script>
+    <script>
+        //【上传音乐】
+        uploadForeMusic = function () {
+            //判断内容是否为空
+            if ($("#musicFile").val().length <= 0) {
+                layer.alert("请选择要上传的音乐!");                
+                return;
+            }
+            //执行异步上传
+            $.ajaxFileUpload({
+                url: '@Url.Action("UploadMusic", "Home")',//上传到文件服务器请求地址
+                type: 'post',
+                data: { dir: 'media' },//自定义参数
+                secureuri: false,//是否需要安全协议,一般设置为false
+                fileElementId: 'musicFile',//文件上传遇的ID,和后台的参数名相对应
+                dataType: 'json',//返回值类型,一般设置为json
+                success: function (data)//服务器成功响应处理函数
+                {
+                    if (data.error == 0) {
+                        $("#hidMusic").val(data.url);
+                        layer.msg("上传成功!");
+                    } else {
+                        layer.alert(data.message);
+                    }
+                }
+              
+
+            });      
+        }       
+        $("#upMusic").click(function () {
+            uploadForeMusic();
+        });
+       //--------【上传封面】
+        uploadFacePhoto = function () {
+            //判断内容是否为空
+            if ($("#imgFile").val().length <= 0) {
+                layer.alert("请选择要上传的封面!");              
+                return;
+            }
+            //执行异步上传
+            $.ajaxFileUpload({
+                url: '@Url.Action("UploadImage", "Home")',//上传到文件服务器请求地址
+                type: 'post',
+                data: { dir: 'image' },//自定义参数
+                secureuri: false,//是否需要安全协议,一般设置为false
+                fileElementId: 'imgFile',//文件上传遇的ID
+                dataType: 'json',//返回值类型,一般设置为json
+                success: function (data)//服务器成功响应处理函数
+                {
+                    if (data.error == 0) {
+                        $("#articleFacePhotoImg").attr("src", data.url);                       
+                    } else {
+                        layer.alert(data.message);
+                    }
+                }
+
+            });
+        }
+        //点击实现上传
+        $("#upPic").click(function () {
+            uploadFacePhoto();
+        });
+
+        $("#save").click(function () {
+            var title = $("#title").val().trim();
+            var author = $("#author").val().trim();
+            var musicFile = $("#hidMusic").val().trim();
+            var imgFile = $("#articleFacePhotoImg").attr("src");           
+            if (title.length <= 0) {
+                layer.alert("请输入歌曲名!");
+                return;
+            }
+            if (author.length <= 0) {
+                layer.alert("请输入演唱者!");
+                 return;
+            }
+            if (musicFile.length <= 0) {
+                layer.alert("请上传音乐文件!");
+                return;
+            }
+            if (imgFile == null) {
+                layer.alert("请上传封面!");
+                return;
+            }
+            //保存上传音乐
+            $.ajax({
+                async:true,
+                type: "post",
+                url: '@Url.Action("SaveMusicMsg","Home")',
+                data: {title:title,author:author,url:musicFile,pic:imgFile},//参数                                         
+                success: function (msg) {
+                    if (msg == "ok") {
+                        layer.msg("保存成功~");
+                        window.location.href = '@Url.Action("Index","Home")';
+                    } else {
+                        layer.msg("保存失败,请稍后再试~");
+                    }
+                },
+                beforeSend: function () {
+                    // 禁用按钮防止重复提交
+                    $("#save").attr({ disabled: "disabled" });
+                    $("#save").val("保存中...");
+                },
+                complete: function () {
+                    $("#submit").removeAttr("disabled");
+                },
+                error: function (data) {
+                    console.info("error: " + data.responseText);
+                }
+            });
+            
+        });
+    </script>
+</body>
+</html>

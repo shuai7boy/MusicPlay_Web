@@ -1,0 +1,144 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport"
+          content="width=device-width,initial-scale=1.0,user-scalable=no">
+    <meta name="viewport" content="width=device-width" />
+    <title>听海边吹风</title>
+    <style type="text/css">
+        body{
+            width:100%;
+            background-color:#E2DED3;
+        }
+        header{
+            width:100%;
+            text-align:center;
+        }
+        footer{
+          position:absolute;
+          bottom:30px;   
+          left:10px;  
+        }
+        #ol1{
+            list-style:none;
+        }
+        #ol1 li{
+            margin-top:5px;            
+        }
+         #ol1 li a:hover{
+            text-decoration:none;
+         }
+    </style>
+</head>
+<body>
+    <header>
+        <div id="player1" class="aplayer">
+            <pre class="aplayer-lrc-content">
+  
+            </pre>
+        </div>
+        <ol id="ol1">
+            
+        </ol>
+    </header>
+    <footer>
+        <a href='@Url.Action("UpLoadMusic","Home")'>添加音乐</a>
+    </footer>
+    <script src="~/Scripts/jquery-1.8.2.min.js"></script>
+    <link href="//cdn.bootcss.com/aplayer/1.4.8/APlayer.min.css" rel="stylesheet">
+    <script src="//cdn.bootcss.com/aplayer/1.4.8/APlayer.min.js"></script> 
+    <script src="~/Scripts/layer/layer.js"></script>
+    <script type="text/javascript">
+        initMusic=function(msgData){
+            //初始化APlayer音乐播放器插件。
+            var ap = new APlayer({
+                element: document.getElementById('player1'),
+                narrow: false,
+                autoplay: true, //是否自动播放
+                showlrc: false, //是否显示歌词
+                theme: '#66B7FF', //主题颜色
+                music: {
+                    title: msgData.title,
+                    author: msgData.author,
+                    url: '' + msgData.url+ '',
+                    pic: '' + msgData.pic + '',
+                }
+            });
+            ap.init();
+        }
+      
+        //获取第一条音乐
+        GetFirstMusic=function(){
+            $.ajax({
+                async: false,//是否异步，默认是true
+                type: "get",
+                url: '@Url.Action("GetFirstMusic","Home")',                
+                dataType: 'json',//返回数据类型。如果想解析json数据，那么类型这应该设置为json                   
+                success: function (msg) {                    
+                    if (msg.msg!=0) {
+                        initMusic(msg);
+                    } else {
+                        layer.msg("无数据!");
+                    }
+                }
+            });
+        }
+        GetAllMusic=function(){
+        //获取所有的音乐
+        $.ajax({
+            async: false,//是否异步，默认是true
+            type: "get",
+            url: '@Url.Action("GetAllMusic", "Home")',
+            dataType: 'json',//返回数据类型。如果想解析json数据，那么类型这应该设置为json                   
+            success: function (msg) {               
+                if (msg.msg == "ok") {
+                    
+                    for (var i = 0; i < msg.list.length; i++) {
+                        var html = '<li><a href="javascript:" onclick="GetdClickMusic(' + msg.list[i].id + ')">' + msg.list[i].title + '——' + msg.list[i].author + '</a>&nbsp;&nbsp;&nbsp;&nbsp;<a onclick="IsDelete(' + msg.list[i].id + ')" href="javascript:">删除</a></li>';
+                        $("#ol1").append(html);
+                    }
+                } else {
+                    layer.msg("无数据!");
+                }
+            }
+        });
+        }
+        GetFirstMusic();
+        GetAllMusic();
+        GetdClickMusic = function (id) {          
+            $.ajax({
+                async: false,//是否异步，默认是true
+                type: "get",                
+                url: '@Url.Action("GetClickMusic", "Home")?id='+id+'',
+                dataType: 'json',//返回数据类型。如果想解析json数据，那么类型这应该设置为json                   
+                success: function (msg) {
+                    if (msg.msg != 0) {
+                        initMusic(msg);
+                    } else {
+                        layer.msg("无数据!");
+                    }
+                }
+            });
+        }
+        IsDelete = function (id) {
+            layer.confirm('确定要删除?', { icon: 3, title: '提示' }, function () {
+                $.post('@Url.Action("DeleteMusic","Home")', { id: id }, function (msg) {
+                    if (msg == "ok") {
+                        $("#ol1").empty();
+                        GetAllMusic();
+                        layer.closeAll("dialog");
+                    } else {
+                        layer.msg("系统出错，请稍后再试~");
+                        
+                    }
+                })
+            });            
+        }
+    </script>    
+</body>
+</html>
